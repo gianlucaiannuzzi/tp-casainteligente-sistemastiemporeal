@@ -1,0 +1,70 @@
+# ========================
+# Compilación y temporales
+# ========================
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.out
+*.lst
+*.d
+*.dep
+*.a
+*.lib
+*.exp
+*.ilk
+*.pdb
+
+# =================
+# Carpeta de build
+# =================
+build/
+Build/
+out/
+Output/
+Debug/
+Release/
+x64/
+x86/
+dist/
+bin/
+obj/
+
+# ======================
+# Entornos de desarrollo
+# ======================
+.vscode/
+.idea/
+*.code-workspace
+
+# Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.ncb
+*.aps
+*.cachefile
+
+# ====================
+# Archivos del sistema
+# ====================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+!FreeRTOS/**
+
+# =====
+# Otros
+# =====
+*.zip
+*.tar
+*.gz
+*.7z
+*.bak
+*.tmp
