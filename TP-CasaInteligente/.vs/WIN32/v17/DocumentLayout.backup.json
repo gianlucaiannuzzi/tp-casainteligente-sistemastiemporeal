@@ -1,9 +1,20 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Personal\\Nani\\Facultad\\2025-2doCuatrimestre\\SistemasTiempoReal\\Subiendo\\TP-CasaInteligente\\",
+  "WorkspaceRootPath": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Personal\\Nani\\Facultad\\2025-2doCuatrimestre\\SistemasTiempoReal\\TP-CasaInteligente-SistemasTiempoReal\\FreeRTOS\\FreeRTOS\\Source\\FreeRTOS-Kernel\\timers.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|solutionrelative:main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\FreeRTOSConfig.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|solutionrelative:FreeRTOSConfig.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\portable\\MSVC-MingW\\port.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C686325E-3261-42F7-AEB1-DDE5280E1CEB}|WIN32.vcxproj|C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\include\\portable.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -13,19 +24,58 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "timers.c",
-              "DocumentMoniker": "C:\\Personal\\Nani\\Facultad\\2025-2doCuatrimestre\\SistemasTiempoReal\\TP-CasaInteligente-SistemasTiempoReal\\FreeRTOS\\FreeRTOS\\Source\\FreeRTOS-Kernel\\timers.c",
-              "RelativeDocumentMoniker": "..\\..\\TP-CasaInteligente-SistemasTiempoReal\\FreeRTOS\\FreeRTOS\\Source\\FreeRTOS-Kernel\\timers.c",
-              "ToolTip": "C:\\Personal\\Nani\\Facultad\\2025-2doCuatrimestre\\SistemasTiempoReal\\TP-CasaInteligente-SistemasTiempoReal\\FreeRTOS\\FreeRTOS\\Source\\FreeRTOS-Kernel\\timers.c",
-              "RelativeToolTip": "..\\..\\TP-CasaInteligente-SistemasTiempoReal\\FreeRTOS\\FreeRTOS\\Source\\FreeRTOS-Kernel\\timers.c",
-              "ViewState": "AgIAAC4DAAAAAAAAAAASwDMDAABPAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "port.c",
+              "DocumentMoniker": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\portable\\MSVC-MingW\\port.c",
+              "RelativeDocumentMoniker": "..\\FreeRTOS\\FreeRTOS\\Source\\portable\\MSVC-MingW\\port.c",
+              "ToolTip": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\portable\\MSVC-MingW\\port.c",
+              "RelativeToolTip": "..\\FreeRTOS\\FreeRTOS\\Source\\portable\\MSVC-MingW\\port.c",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2025-11-03T02:48:00.006Z",
+              "WhenOpened": "2025-11-05T02:25:57.792Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "portable.h",
+              "DocumentMoniker": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\include\\portable.h",
+              "RelativeDocumentMoniker": "..\\FreeRTOS\\FreeRTOS\\Source\\include\\portable.h",
+              "ToolTip": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\FreeRTOS\\FreeRTOS\\Source\\include\\portable.h",
+              "RelativeToolTip": "..\\FreeRTOS\\FreeRTOS\\Source\\include\\portable.h",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAqwKcAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-11-05T01:20:21.541Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "FreeRTOSConfig.h",
+              "DocumentMoniker": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\FreeRTOSConfig.h",
+              "RelativeDocumentMoniker": "FreeRTOSConfig.h",
+              "ToolTip": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\FreeRTOSConfig.h",
+              "RelativeToolTip": "FreeRTOSConfig.h",
+              "ViewState": "AgIAADMAAAAAAAAAAAAAADMAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-11-05T00:49:51.824Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "main.c",
+              "DocumentMoniker": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\main.c",
+              "RelativeDocumentMoniker": "main.c",
+              "ToolTip": "C:\\Users\\giann\\Desktop\\Git\\tp-casainteligente-sistemastiemporeal\\TP-CasaInteligente\\main.c",
+              "RelativeToolTip": "main.c",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABEAAABRAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-11-05T00:31:57.978Z",
               "EditorCaption": ""
             }
           ]
