@@ -126,13 +126,34 @@ void vTaskSecurity(void* pvParameters) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+
+            // Si la alarma está armada y no está sonando
             if (g_alarmArmed && !g_alarmOn) {
                 for (int i = 0; i < NUM_ROOMS; i++) {
                     if (g_motionDetected[i]) {
                         g_alarmOn = true;
-                        safe_printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
                         safe_printf("[ALARMA] MOVIMIENTO DETECTADO! Alarma SONANDO!\n");
-                        safe_printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                        xSemaphoreGive(xSystemStateMutex);
+
+                        //Suena durante 10 segundos
+                        vTaskDelay(pdMS_TO_TICKS(10000));
+
+                        // Apagar alarma
+                        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+                            g_alarmOn = false;
+                            g_alarmArmed = false;
+                            safe_printf("[ALARMA] Alarma APAGADA tras 10 segundos.\n");
+                            xSemaphoreGive(xSystemStateMutex);
+                        }
+
+                        // Esperar 2 segundos y volver a activar el sistema
+                        vTaskDelay(pdMS_TO_TICKS(2000));
+                        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+                            g_alarmArmed = true;
+                            safe_printf("[CONTROL] Sistema de alarma REACTIVADO.\n");
+                            xSemaphoreGive(xSystemStateMutex);
+                        }
+
                         break;
                     }
                 }
@@ -142,22 +163,18 @@ void vTaskSecurity(void* pvParameters) {
     }
 }
 
-void vTaskControl(void* pvParameters) {
-    const TickType_t xFrequency = pdMS_TO_TICKS(30000);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-
-    for (;;) {
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-
-        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-            g_alarmArmed = !g_alarmArmed;
-            if (!g_alarmArmed) {
-                g_alarmOn = false;
-            }
-            safe_printf("\n[CONTROL] Sistema de alarma %s.\n", g_alarmArmed ? "ARMADO" : "DESARMADO");
-            xSemaphoreGive(xSystemStateMutex);
-        }
-    }
+void vTaskControl(void* pvParameters) { 
+    const TickType_t xFrequency = pdMS_TO_TICKS(30000); 
+    TickType_t xLastWakeTime = xTaskGetTickCount(); 
+    for (;;) { 
+        vTaskDelayUntil(&xLastWakeTime, xFrequency); 
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) { 
+            safe_printf("[CONTROL] Estado: alarma %s, sonando: %s\n", 
+                g_alarmArmed ? "ARMADA" : "DESARMADA", 
+                g_alarmOn ? "SI" : "NO"); 
+            xSemaphoreGive(xSystemStateMutex); 
+        } 
+    } 
 }
 
 // --- Tareas de Simulación de Sensores (Productores) ---
