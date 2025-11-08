@@ -36,6 +36,7 @@ obj/
 # Entornos de desarrollo
 # ======================
 .vscode/
+.vs/
 .idea/
 *.code-workspace
 
