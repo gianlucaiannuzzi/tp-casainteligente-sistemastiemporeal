@@ -26,6 +26,11 @@
 
 #include <stdio.h>
 #include <conio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+#include <stdarg.h>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
@@ -34,54 +39,265 @@
 #include <windows.h>
 #include "trcRecorder.h"
 
-void tareaDeEjemplo(void* pvParameters)
-{
-	for (;;)
-	{
-		printf("Ejecutando tarea...\n");
-		vTaskDelay(pdMS_TO_TICKS(1000));
-	}
+#define NUM_ROOMS 3
+#define TEMP_MIN 20
+#define TEMP_MAX 24
+#define LUX_THRESHOLD 100
+
+int g_temperatures[NUM_ROOMS];
+int g_luxLevels[NUM_ROOMS];
+bool g_motionDetected[NUM_ROOMS];
+
+bool g_thermostatOn = false;
+bool g_lightsState[NUM_ROOMS] = { false, false, false };
+bool g_alarmOn = false;
+bool g_alarmArmed = true;
+
+SemaphoreHandle_t xSystemStateMutex;
+SemaphoreHandle_t xPrintMutex;
+
+void safe_printf(const char* format, ...) {
+    va_list args;
+    if (xSemaphoreTake(xPrintMutex, portMAX_DELAY) == pdTRUE) {
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+        xSemaphoreGive(xPrintMutex);
+    }
 }
+
+// --- Tareas de Control (Consumidores) ---
+// Estas 4 tareas son identicas a la version anterior.
+// Leen el estado global y actuan.
+
+void vTaskClimatization(void* pvParameters) {
+    const TickType_t xFrequency = pdMS_TO_TICKS(5000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    bool shouldBeOn = false;
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        shouldBeOn = false;
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            for (int i = 0; i < NUM_ROOMS; i++) {
+                if (g_temperatures[i] < TEMP_MIN || g_temperatures[i] > TEMP_MAX) {
+                    shouldBeOn = true;
+                    break;
+                }
+            }
+
+            if (g_thermostatOn != shouldBeOn) {
+                g_thermostatOn = shouldBeOn;
+                safe_printf("[CLIMA] Termostato %s.\n", g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+            }
+
+            xSemaphoreGive(xSystemStateMutex);
+        }
+    }
+}
+
+void vTaskLighting(void* pvParameters) {
+    const TickType_t xFrequency = pdMS_TO_TICKS(2000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            for (int i = 0; i < NUM_ROOMS; i++) {
+                bool newState = (g_luxLevels[i] < LUX_THRESHOLD);
+                if (g_lightsState[i] != newState) {
+                    g_lightsState[i] = newState;
+                    safe_printf("[LUCES] Luz Habitación %d %s.\n", i, g_lightsState[i] ? "ON" : "OFF");
+                }
+            }
+            xSemaphoreGive(xSystemStateMutex);
+        }
+    }
+}
+
+void vTaskSecurity(void* pvParameters) {
+    const TickType_t xFrequency = pdMS_TO_TICKS(500);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            if (g_alarmArmed && !g_alarmOn) {
+                for (int i = 0; i < NUM_ROOMS; i++) {
+                    if (g_motionDetected[i]) {
+                        g_alarmOn = true;
+                        safe_printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                        safe_printf("[ALARMA] MOVIMIENTO DETECTADO! Alarma SONANDO!\n");
+                        safe_printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                        break;
+                    }
+                }
+            }
+            xSemaphoreGive(xSystemStateMutex);
+        }
+    }
+}
+
+void vTaskControl(void* pvParameters) {
+    const TickType_t xFrequency = pdMS_TO_TICKS(30000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            g_alarmArmed = !g_alarmArmed;
+            if (!g_alarmArmed) {
+                g_alarmOn = false;
+            }
+            safe_printf("\n[CONTROL] Sistema de alarma %s.\n", g_alarmArmed ? "ARMADO" : "DESARMADO");
+            xSemaphoreGive(xSystemStateMutex);
+        }
+    }
+}
+
+// --- Tareas de Simulación de Sensores (Productores) ---
+// Estas 9 tareas reemplazan a la vTaskSensorSimulation original.
+
+void vTaskSimTemperature(void* pvParameters) {
+    int room_index = *((int*)pvParameters);
+    const TickType_t xFrequency = pdMS_TO_TICKS(7000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    int temp_cycle[] = { 18, 22, 26, 22 };
+    int cycle_step = 0;
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        cycle_step = (cycle_step + 1) % 4;
+        int new_temp = temp_cycle[cycle_step];
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            g_temperatures[room_index] = new_temp;
+            xSemaphoreGive(xSystemStateMutex);
+        }
+        safe_printf("[SIM-TEMP-%d] Nuevo valor: %d C\n", room_index, new_temp);
+    }
+}
+
+void vTaskSimLight(void* pvParameters) {
+    int room_index = *((int*)pvParameters);
+    const TickType_t xFrequency = pdMS_TO_TICKS(5000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    int light_cycle[] = { 50, 200 };
+    int cycle_step = 0;
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        cycle_step = (cycle_step + 1) % 2;
+        int new_lux = light_cycle[cycle_step];
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            g_luxLevels[room_index] = new_lux;
+            xSemaphoreGive(xSystemStateMutex);
+        }
+        safe_printf("[SIM-LUZ-%d] Nuevo valor: %d lux\n", room_index, new_lux);
+    }
+}
+
+void vTaskSimMotion(void* pvParameters) {
+    int room_index = *((int*)pvParameters);
+    const TickType_t xFrequency = pdMS_TO_TICKS(3000);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    bool motion_cycle[] = { false, false, true, false };
+    int cycle_step = 0;
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        cycle_step = (cycle_step + 1) % 4;
+        bool new_motion = motion_cycle[cycle_step];
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            g_motionDetected[room_index] = new_motion;
+            xSemaphoreGive(xSystemStateMutex);
+        }
+
+        if (new_motion) {
+            safe_printf("[SIM-MOV-%d] MOVIMIENTO DETECTADO\n", room_index);
+        }
+    }
+}
+
 
 int main(void)
 {
-	// Creo consola para mostrar los prints.
-	AllocConsole();                
-	FILE* stream;
-	freopen_s(&stream, "CONOUT$", "w", stdout);
-	printf("Consola iniciada correctamente. \n");
+    AllocConsole();
+    FILE* stream;
+    freopen_s(&stream, "CONOUT$", "w", stdout);
+    printf("Consola iniciada correctamente. \n");
 
-	//Inicializo el trace recorder antes de crear la tarea.
-	vTraceEnable(TRC_START);
+    vTraceEnable(TRC_START);
 
-	// Creo la tarea e inicio el scheduler.
-	xTaskCreate(tareaDeEjemplo, "Tarea1", configMINIMAL_STACK_SIZE + 100, NULL, 1, NULL);
-	vTaskStartScheduler();
+    xSystemStateMutex = xSemaphoreCreateMutex();
+    xPrintMutex = xSemaphoreCreateMutex();
 
-	printf("El scheduler termin� (no deber�a pasar). \n");
-	for (;;);
+    if (xSystemStateMutex == NULL || xPrintMutex == NULL) {
+        printf("Error al crear mutex\n");
+        return 1;
+    }
+
+    // Indices estaticos para pasar a las tareas
+    static int room_indices[NUM_ROOMS] = { 0, 1, 2 };
+
+    // Crear Tareas de Control
+    xTaskCreate(vTaskClimatization, "Climatization", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
+    xTaskCreate(vTaskLighting, "Lighting", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
+    xTaskCreate(vTaskSecurity, "Security", configMINIMAL_STACK_SIZE + 200, NULL, 3, NULL);
+    xTaskCreate(vTaskControl, "Control", configMINIMAL_STACK_SIZE + 200, NULL, 1, NULL);
+
+    // Crear Tareas de Simulación (9 tareas)
+    for (int i = 0; i < NUM_ROOMS; i++) {
+        char task_name[20];
+
+        sprintf(task_name, "SimTemp%d", i);
+        xTaskCreate(vTaskSimTemperature, task_name, configMINIMAL_STACK_SIZE + 200, (void*)&room_indices[i], 1, NULL);
+
+        sprintf(task_name, "SimLight%d", i);
+        xTaskCreate(vTaskSimLight, task_name, configMINIMAL_STACK_SIZE + 200, (void*)&room_indices[i], 1, NULL);
+
+        sprintf(task_name, "SimMotion%d", i);
+        xTaskCreate(vTaskSimMotion, task_name, configMINIMAL_STACK_SIZE + 200, (void*)&room_indices[i], 1, NULL);
+    }
+
+    printf("Scheduler iniciando con 13 tareas...\n");
+    vTaskStartScheduler();
+
+    printf("El scheduler terminó (no debería pasar). \n");
+    for (;;);
 }
 
-/* ! Hooks requeridos por FreeRTOS si est�n habilitados en FreeRTOSConfig.h ! */
-/* Si al terminar el proyecto no usamos nada de esto, desactivar el flag en el archivo de configuracion y eliminar funciones vacias */
+/* ! Hooks requeridos por FreeRTOS si están habilitados en FreeRTOSConfig.h ! */
 void vApplicationMallocFailedHook(void) { for (;;); }
 void vApplicationIdleHook(void) {}
 void vApplicationTickHook(void) {}
 void vAssertCalled(unsigned long line, const char* const file) { for (;;); }
 
 void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
-	StackType_t** ppxIdleTaskStackBuffer,
-	uint32_t* pulIdleTaskStackSize) {
+    StackType_t** ppxIdleTaskStackBuffer,
+    uint32_t* pulIdleTaskStackSize) {
 }
 
 void vApplicationGetTimerTaskMemory(StaticTask_t** ppxTimerTaskTCBBuffer,
-	StackType_t** ppxTimerTaskStackBuffer,
-	uint32_t* pulTimerTaskStackSize) {
+    StackType_t** ppxTimerTaskStackBuffer,
+    uint32_t* pulTimerTaskStackSize) {
 }
 
 configRUN_TIME_COUNTER_TYPE ulGetRunTimeCounterValue(void)
 {
-	return (configRUN_TIME_COUNTER_TYPE)GetTickCount64();
+    return (configRUN_TIME_COUNTER_TYPE)GetTickCount64();
 }
 
 void vConfigureTimerForRunTimeStats(void)
@@ -90,7 +306,7 @@ void vConfigureTimerForRunTimeStats(void)
 
 void vGenerateCoreBInterrupt(void* xUpdatedMessageBuffer)
 {
-	(void)xUpdatedMessageBuffer;
+    (void)xUpdatedMessageBuffer;
 }
 
 void vApplicationDaemonTaskStartupHook(void)
