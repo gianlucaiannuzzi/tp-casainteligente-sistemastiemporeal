@@ -163,18 +163,38 @@ void vTaskSecurity(void* pvParameters) {
     }
 }
 
-void vTaskControl(void* pvParameters) { 
-    const TickType_t xFrequency = pdMS_TO_TICKS(30000); 
-    TickType_t xLastWakeTime = xTaskGetTickCount(); 
-    for (;;) { 
-        vTaskDelayUntil(&xLastWakeTime, xFrequency); 
-        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) { 
-            safe_printf("[CONTROL] Estado: alarma %s, sonando: %s\n", 
-                g_alarmArmed ? "ARMADA" : "DESARMADA", 
-                g_alarmOn ? "SI" : "NO"); 
-            xSemaphoreGive(xSystemStateMutex); 
-        } 
-    } 
+void vTaskSystemMonitor(void* pvParameters) {
+    const TickType_t xFrequency = pdMS_TO_TICKS(30000); // cada 30 segundos
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) {
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+
+        if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+            safe_printf("\n================ ESTADO DEL SISTEMA ================\n");
+
+            // Estado de alarma
+            safe_printf("[CONTROL] Alarma: %s | Sonando: %s\n",
+                g_alarmArmed ? "ARMADA" : "DESARMADA",
+                g_alarmOn ? "SI" : "NO");
+
+            // Estado del termostato
+            safe_printf("[TERMOSTATO] Estado: %s\n",
+                g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+
+            // Estado de habitaciones
+            for (int i = 0; i < NUM_ROOMS; i++) {
+                safe_printf("[HABITACIÓN %d] Temp: %d°C | Luz: %s | Movimiento: %s\n",
+                    i + 1,
+                    g_temperatures[i],
+                    g_lightsState[i] ? "ON" : "OFF",
+                    g_motionDetected[i] ? "Sí" : "No");
+            }
+
+            safe_printf("===================================================\n\n");
+            xSemaphoreGive(xSystemStateMutex);
+        }
+    }
 }
 
 // --- Tareas de Simulación de Sensores (Productores) ---
@@ -287,9 +307,9 @@ int main(void)
 
     // Crear Tareas de Control
     xTaskCreate(vTaskClimatization, "Climatization", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
-    xTaskCreate(vTaskLighting, "Lighting", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
-    xTaskCreate(vTaskSecurity, "Security", configMINIMAL_STACK_SIZE + 200, NULL, 3, NULL);
-    xTaskCreate(vTaskControl, "Control", configMINIMAL_STACK_SIZE + 200, NULL, 1, NULL);
+    xTaskCreate(vTaskLighting, "Iluminacion", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
+    xTaskCreate(vTaskSecurity, "Seguridad", configMINIMAL_STACK_SIZE + 200, NULL, 3, NULL);
+    xTaskCreate(vTaskSystemMonitor, "Monitor", configMINIMAL_STACK_SIZE + 200, NULL, 1, NULL);
 
     // Crear Tareas de Simulación
     for (int i = 0; i < NUM_ROOMS; i++) {
