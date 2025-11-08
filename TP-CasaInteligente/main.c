@@ -71,7 +71,7 @@ void safe_printf(const char* format, ...) {
 // Leen el estado global y actuan.
 
 void vTaskClimatization(void* pvParameters) {
-    const TickType_t xFrequency = pdMS_TO_TICKS(5000);
+    const TickType_t xFrequency = pdMS_TO_TICKS(7000 + 200); // lee después del sensor para activarla de inmediato
     TickType_t xLastWakeTime = xTaskGetTickCount();
     bool shouldBeOn = false;
 
@@ -89,7 +89,8 @@ void vTaskClimatization(void* pvParameters) {
 
             if (g_thermostatOn != shouldBeOn) {
                 g_thermostatOn = shouldBeOn;
-                safe_printf("[CLIMA] Termostato %s.\n", g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+                safe_printf("[CLIMATIZACION] Termostato %s\n",
+                    g_thermostatOn ? "ENCENDIDO" : "APAGADO");
             }
 
             xSemaphoreGive(xSystemStateMutex);
