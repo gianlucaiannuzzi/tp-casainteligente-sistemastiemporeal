@@ -160,27 +160,35 @@ void vTaskControl(void* pvParameters) {
 }
 
 // --- Tareas de Simulación de Sensores (Productores) ---
-// Estas 9 tareas reemplazan a la vTaskSensorSimulation original.
+// Cada habitación tiene una simulación independiente y con fluctuaciones suaves.
 
 void vTaskSimTemperature(void* pvParameters) {
     int room_index = *((int*)pvParameters);
     const TickType_t xFrequency = pdMS_TO_TICKS(7000);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
-    int temp_cycle[] = { 18, 22, 26, 22 };
-    int cycle_step = 0;
+    // Semilla única para cada tarea (evita valores idénticos)
+    srand(time(NULL) + room_index * 1234);
+
+    int temp = 20 + (rand() % 5);  // valor inicial entre 20 y 24
 
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-        cycle_step = (cycle_step + 1) % 4;
-        int new_temp = temp_cycle[cycle_step];
+        // Pequeña variación: -1, 0 o +1 grados
+        int delta = (rand() % 3) - 1;
+        temp += delta;
+
+        // Limitar entre 16 y 28
+        if (temp < 16) temp = 16;
+        if (temp > 28) temp = 28;
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-            g_temperatures[room_index] = new_temp;
+            g_temperatures[room_index] = temp;
             xSemaphoreGive(xSystemStateMutex);
         }
-        safe_printf("[SIM-TEMP-%d] Nuevo valor: %d C\n", room_index, new_temp);
+
+        safe_printf("[SIM-TEMP-%d] Nueva temperatura: %d Grados Celcius\n", room_index, temp);
     }
 }
 
@@ -189,20 +197,27 @@ void vTaskSimLight(void* pvParameters) {
     const TickType_t xFrequency = pdMS_TO_TICKS(5000);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
-    int light_cycle[] = { 50, 200 };
-    int cycle_step = 0;
+    srand(time(NULL) + room_index * 4321);
+
+    int lux = 100 + (rand() % 150);  // 100..250
 
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-        cycle_step = (cycle_step + 1) % 2;
-        int new_lux = light_cycle[cycle_step];
+        // Variación suave: +/- 30 lux
+        int delta = (rand() % 61) - 30;
+        lux += delta;
+
+        // Limitar entre 0 y 300
+        if (lux < 0) lux = 0;
+        if (lux > 300) lux = 300;
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-            g_luxLevels[room_index] = new_lux;
+            g_luxLevels[room_index] = lux;
             xSemaphoreGive(xSystemStateMutex);
         }
-        safe_printf("[SIM-LUZ-%d] Nuevo valor: %d lux\n", room_index, new_lux);
+
+        safe_printf("[SIM-LUZ-%d] Nivel de luz: %d lux\n", room_index, lux);
     }
 }
 
@@ -211,26 +226,26 @@ void vTaskSimMotion(void* pvParameters) {
     const TickType_t xFrequency = pdMS_TO_TICKS(3000);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
-    bool motion_cycle[] = { false, false, true, false };
-    int cycle_step = 0;
+    srand(time(NULL) + room_index * 9876);
 
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-        cycle_step = (cycle_step + 1) % 4;
-        bool new_motion = motion_cycle[cycle_step];
+        // Probabilidad de movimiento distinta según habitación 1%
+        int prob = 1;
+        bool new_motion = ((rand() % 100) < prob);
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
             g_motionDetected[room_index] = new_motion;
             xSemaphoreGive(xSystemStateMutex);
         }
 
-        if (new_motion) {
-            safe_printf("[SIM-MOV-%d] MOVIMIENTO DETECTADO\n", room_index);
-        }
+        if (new_motion)
+            safe_printf("[SIM-MOV-%d] Movimiento detectado\n", room_index);
+        else
+            safe_printf("[SIM-MOV-%d] Sin movimiento\n", room_index);
     }
 }
-
 
 int main(void)
 {
