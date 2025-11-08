@@ -109,7 +109,7 @@ void vTaskLighting(void* pvParameters) {
                 bool newState = (g_luxLevels[i] < LUX_THRESHOLD);
                 if (g_lightsState[i] != newState) {
                     g_lightsState[i] = newState;
-                    safe_printf("[LUCES] Luz Habitación %d %s.\n", i, g_lightsState[i] ? "ON" : "OFF");
+                    safe_printf("[LUCES] Habitacion %d ---> %s\n", i + 1, g_lightsState[i] ? "ON" : "OFF");
                 }
             }
             xSemaphoreGive(xSystemStateMutex);
@@ -258,7 +258,7 @@ int main(void)
     xTaskCreate(vTaskSecurity, "Security", configMINIMAL_STACK_SIZE + 200, NULL, 3, NULL);
     xTaskCreate(vTaskControl, "Control", configMINIMAL_STACK_SIZE + 200, NULL, 1, NULL);
 
-    // Crear Tareas de Simulación (9 tareas)
+    // Crear Tareas de Simulación
     for (int i = 0; i < NUM_ROOMS; i++) {
         char task_name[20];
 
@@ -272,10 +272,10 @@ int main(void)
         xTaskCreate(vTaskSimMotion, task_name, configMINIMAL_STACK_SIZE + 200, (void*)&room_indices[i], 1, NULL);
     }
 
-    printf("Scheduler iniciando con 13 tareas...\n");
+    printf("Iniciando simulacion...\n");
     vTaskStartScheduler();
 
-    printf("El scheduler terminó (no debería pasar). \n");
+    printf("La simulacion terminó (no debería pasar). \n");
     for (;;);
 }
 
