@@ -110,7 +110,7 @@ void vTaskLighting(void* pvParameters) {
                 bool newState = (g_luxLevels[i] < LUX_THRESHOLD);
                 if (g_lightsState[i] != newState) {
                     g_lightsState[i] = newState;
-                    safe_printf("[LUCES] Habitacion %d ---> %s\n", i + 1, g_lightsState[i] ? "ON" : "OFF");
+                    safe_printf("[LUCES] Habitacion %d ---> %s\n", i, g_lightsState[i] ? "ON" : "OFF");
                 }
             }
             xSemaphoreGive(xSystemStateMutex);
@@ -136,7 +136,7 @@ void vTaskSecurity(void* pvParameters) {
                         xSemaphoreGive(xSystemStateMutex);
 
                         //Suena durante 10 segundos
-                        vTaskDelay(pdMS_TO_TICKS(10000));
+                        vTaskDelay(pdMS_TO_TICKS(15000));
 
                         // Apagar alarma
                         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
@@ -147,7 +147,7 @@ void vTaskSecurity(void* pvParameters) {
                         }
 
                         // Esperar 2 segundos y volver a activar el sistema
-                        vTaskDelay(pdMS_TO_TICKS(2000));
+                        vTaskDelay(pdMS_TO_TICKS(5000));
                         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
                             g_alarmArmed = true;
                             safe_printf("[CONTROL] Sistema de alarma REACTIVADO.\n");
@@ -175,7 +175,7 @@ void vTaskSystemMonitor(void* pvParameters) {
 
             // Estado de alarma
             safe_printf("[CONTROL] Alarma: %s | Sonando: %s\n",
-                g_alarmArmed ? "ARMADA" : "DESARMADA",
+                g_alarmArmed ? "ACTIVADA" : "APAGADA",
                 g_alarmOn ? "SI" : "NO");
 
             // Estado del termostato
@@ -184,9 +184,10 @@ void vTaskSystemMonitor(void* pvParameters) {
 
             // Estado de habitaciones
             for (int i = 0; i < NUM_ROOMS; i++) {
-                safe_printf("[HABITACIÓN %d] Temp: %d°C | Luz: %s | Movimiento: %s\n",
-                    i + 1,
+                safe_printf("[HABITACION %d] Temp: %d Grados Celcius | Lux: %d | Luz: %s | Movimiento: %s\n",
+                    i,
                     g_temperatures[i],
+                    g_luxLevels[i],
                     g_lightsState[i] ? "ON" : "OFF",
                     g_motionDetected[i] ? "Sí" : "No");
             }
@@ -237,7 +238,7 @@ void vTaskSimLight(void* pvParameters) {
 
     srand(time(NULL) + room_index * 4321);
 
-    int lux = 100 + (rand() % 150);  // 100..250
+    int lux = 50 + (rand() % 151);  // valor inicial entre 50 y 200
 
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -246,9 +247,9 @@ void vTaskSimLight(void* pvParameters) {
         int delta = (rand() % 61) - 30;
         lux += delta;
 
-        // Limitar entre 0 y 300
-        if (lux < 0) lux = 0;
-        if (lux > 300) lux = 300;
+        // Limitar entre 50 y 200
+        if (lux < 50) lux = 50;
+        if (lux > 200) lux = 200;
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
             g_luxLevels[room_index] = lux;
@@ -269,8 +270,8 @@ void vTaskSimMotion(void* pvParameters) {
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-        // Probabilidad de movimiento distinta según habitación 1%
-        int prob = 1;
+        // Probabilidad de movimiento del 2%
+        int prob = 2;
         bool new_motion = ((rand() % 100) < prob);
 
         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
