@@ -67,7 +67,6 @@ void safe_printf(const char* format, ...) {
 }
 
 // --- Tareas de Control (Consumidores) ---
-// Estas 4 tareas son identicas a la version anterior.
 // Leen el estado global y actuan.
 
 void vTaskClimatization(void* pvParameters) {
@@ -135,18 +134,18 @@ void vTaskSecurity(void* pvParameters) {
                         safe_printf("[ALARMA] MOVIMIENTO DETECTADO! Alarma SONANDO!\n");
                         xSemaphoreGive(xSystemStateMutex);
 
-                        //Suena durante 10 segundos
+                        //Suena durante 15 segundos
                         vTaskDelay(pdMS_TO_TICKS(15000));
 
                         // Apagar alarma
                         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
                             g_alarmOn = false;
                             g_alarmArmed = false;
-                            safe_printf("[ALARMA] Alarma APAGADA tras 10 segundos.\n");
+                            safe_printf("[ALARMA] Alarma APAGADA tras 15 segundos.\n");
                             xSemaphoreGive(xSystemStateMutex);
                         }
 
-                        // Esperar 2 segundos y volver a activar el sistema
+                        // Esperar 5 segundos y volver a activar el sistema
                         vTaskDelay(pdMS_TO_TICKS(5000));
                         if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
                             g_alarmArmed = true;
