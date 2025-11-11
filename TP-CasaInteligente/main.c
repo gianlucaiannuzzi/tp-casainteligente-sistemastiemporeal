@@ -292,21 +292,21 @@ void vTaskJSON(void* pvParameters) {
 		if (f) {
 			fprintf(f,
 				"{\n"
-				"  \"alarma\": \"%s\",\n"
-				"  \"sonando\": \"%s\",\n"
-				"  \"termostato\": \"%s\",\n"
+				"  \"alarma\": %s,\n"
+				"  \"sonando\": %s,\n"
+				"  \"termostato\": %s,\n"
 				"  \"habitaciones\": [\n"
-				"    { \"nombre\": \"Cocina\", \"temperatura\": %d, \"lux\": %d, \"luz\": \"%s\", \"movimiento\": \"%s\" },\n"
-				"    { \"nombre\": \"Living\", \"temperatura\": %d, \"lux\": %d, \"luz\": \"%s\", \"movimiento\": \"%s\" },\n"
-				"    { \"nombre\": \"Dormitorio\", \"temperatura\": %d, \"lux\": %d, \"luz\": \"%s\", \"movimiento\": \"%s\" }\n"
+				"    { \"nombre\": \"Cocina\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
+				"    { \"nombre\": \"Living\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
+				"    { \"nombre\": \"Dormitorio\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s }\n"
 				"  ]\n"
 				"}\n",
-				g_alarmArmed ? "true" : "false",  // Alarma
-				g_alarmOn ? "true" : "false",  // Sonando
-				g_thermostatOn ? "true" : "false",  // Termostato
-				g_temperatures[0], g_luxLevels[0], g_lightsState[0] ? "true" : "false", g_motionDetected[0] ? "true" : "false",   // Cocina (temperatura, lux, luz, movimiento)
-				g_temperatures[1], g_luxLevels[1], g_lightsState[1] ? "true" : "false", g_motionDetected[1] ? "true" : "false",   // Living (temperatura, lux, luz, movimiento)
-				g_temperatures[2], g_luxLevels[2], g_lightsState[2] ? "true" : "false", g_motionDetected[2] ? "true" : "false"    // Dormitorio (temperatura, lux, luz, movimiento)
+				g_alarmArmed ? "true" : "false",
+				g_alarmOn ? "true" : "false",
+				g_thermostatOn ? "true" : "false",
+				g_temperatures[0], g_luxLevels[0], g_lightsState[0] ? "true" : "false", g_motionDetected[0] ? "true" : "false", // Cocina (temperatura, lux, luz, movimiento)
+				g_temperatures[1], g_luxLevels[1], g_lightsState[1] ? "true" : "false", g_motionDetected[1] ? "true" : "false", // Living (temperatura, lux, luz, movimiento)
+				g_temperatures[2], g_luxLevels[2], g_lightsState[2] ? "true" : "false", g_motionDetected[2] ? "true" : "false"  // Dormitorio (temperatura, lux, luz, movimiento)
 			);
 			fclose(f);
 		}
