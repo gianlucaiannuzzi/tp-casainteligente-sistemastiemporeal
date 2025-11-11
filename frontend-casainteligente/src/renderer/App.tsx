@@ -19,7 +19,7 @@ export default function App() {
         .then(res => res.json())
         .then(data => setEstado(data))
         .catch(() => toast.message("Esperando datos..."));
-    }, 2000);
+    }, 500);
 
     return () => clearInterval(intervalo);
   }, []);
