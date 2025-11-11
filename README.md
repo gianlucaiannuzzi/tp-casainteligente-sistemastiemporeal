@@ -4,6 +4,8 @@
 
 # En la carpeta frontend-casainteligente se encuentra la interfaz grafica hecha en React y montada con el paquete Electron.
 
+# Para levantar el front en el directorio .../frontend-casainteligente hacer npm install, npm install lucide-react (en caso que no reconozca los iconos), por ultimo npm run dev
+ 
 # Para generar el ejecutable de la interfaz grafica, se debe ejecutar CasaInteligente.bat.
 
 # Para iniciar la interfaz grafica, se debe ejecutar el programa "Casa Inteligente.exe".
