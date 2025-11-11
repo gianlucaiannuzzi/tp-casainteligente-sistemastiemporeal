@@ -1,18 +1,24 @@
 @echo off
-echo ===============================
-echo    Compilando el proyecto...
-echo ===============================
+echo ==============================================================
+echo                   Compilando el proyecto...
+echo ==============================================================
 cd frontend-casainteligente
 call npm run build
 
-echo ===============================
-echo      Abriendo interfaz gráfica...
-echo ===============================
+echo ==============================================================
+echo                    Generando ejecutable...
+echo ==============================================================
 cd dist
 
-if exist "Casa Inteligente 1.0.0.exe" (
-    start "" "Casa Inteligente 1.0.0.exe"
+if exist "Casa Inteligente.exe" (
+    move "Casa Inteligente.exe" ../../"Casa Inteligente.exe"
+    echo ==============================================================
+    echo       Ejecutable generado. Puede cerrar esta ventana.
+    echo ==============================================================
 ) else (
-    echo ❌ No se encontró la interfaz gráfica en la carpeta dist. Intente nuevamente...
-    pause
+    echo ==============================================================
+    echo    No se pudo generar el ejecutable. Intente nuevamente...
+    echo ==============================================================
 )
+
+pause

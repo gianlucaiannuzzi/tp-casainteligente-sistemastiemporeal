@@ -1,0 +1,10 @@
+{
+  "alarma": "true",
+  "sonando": "true",
+  "termostato": "false",
+  "habitaciones": [
+    { "nombre": "Cocina", "temperatura": 23, "lux": 173, "luz": "false", "movimiento": "false" },
+    { "nombre": "Living", "temperatura": 21, "lux": 110, "luz": "false", "movimiento": "false" },
+    { "nombre": "Dormitorio", "temperatura": 20, "lux": 127, "luz": "false", "movimiento": "false" }
+  ]
+}

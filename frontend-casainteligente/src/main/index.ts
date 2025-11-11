@@ -1,14 +1,19 @@
-import { app, BrowserWindow } from 'electron'
-import { join } from 'path'
+// @ts-expect-error: No type definitions for server file
+import { iniciarServidor } from "../server/server";
+import { app, BrowserWindow } from 'electron';
+import { join } from 'path';
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 1200,
+    height: 800,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      nodeIntegration: false
     },
   })
+
+  iniciarServidor(); // Levanto el server de Express.
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
