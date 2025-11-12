@@ -18,6 +18,15 @@
     "directories": {
       "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "freertos/",
+        "to": "freertos/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "win": {
       "icon": "public/icon.png",
       "target": [
@@ -48,7 +57,9 @@
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
+    "framer-motion": "^12.23.24",
     "globals": "^16.4.0",
+    "lucide-react": "^0.553.0",
     "postcss": "^8.5.6",
     "server": "^1.0.42",
     "sonner": "^2.0.7",

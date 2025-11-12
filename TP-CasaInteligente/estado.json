@@ -1,10 +1,10 @@
 {
-  "alarma": "true",
-  "sonando": "true",
-  "termostato": "false",
+  "alarma": true,
+  "sonando": true,
+  "termostato": true,
   "habitaciones": [
-    { "nombre": "Cocina", "temperatura": 23, "lux": 173, "luz": "false", "movimiento": "false" },
-    { "nombre": "Living", "temperatura": 21, "lux": 110, "luz": "false", "movimiento": "false" },
-    { "nombre": "Dormitorio", "temperatura": 20, "lux": 127, "luz": "false", "movimiento": "false" }
+    { "nombre": "Cocina", "temperatura": 21, "lux": 66, "luz": true, "movimiento": false },
+    { "nombre": "Living", "temperatura": 19, "lux": 93, "luz": true, "movimiento": true },
+    { "nombre": "Dormitorio", "temperatura": 22, "lux": 79, "luz": true, "movimiento": false }
   ]
 }

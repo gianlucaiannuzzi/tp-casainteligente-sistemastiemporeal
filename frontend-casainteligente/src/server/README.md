@@ -1,0 +1,1 @@
+# En esta carpeta esta el servico Express para comunicar React con FreeRTOS. Basicamente levanta un puerto en 8080, que se encarga de leer el archivo estado.json y pasarle la informacion al frontend.
