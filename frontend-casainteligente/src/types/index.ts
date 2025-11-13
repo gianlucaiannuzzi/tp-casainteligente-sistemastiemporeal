@@ -11,4 +11,5 @@ export type EstadoGlobal = {
     sonando: boolean;
     termostato: boolean;
     habitaciones: EstadoHabitacion[];
+    eventos: string[];
 };
