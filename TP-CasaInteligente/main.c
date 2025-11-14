@@ -39,6 +39,10 @@
 #include <windows.h>
 #include "trcRecorder.h"
 
+// Macro para control de deadlocks con mutex
+#define LOCK(mutex)   xSemaphoreTake(mutex, portMAX_DELAY)
+#define UNLOCK(mutex) xSemaphoreGive(mutex)
+
 #define NUM_ROOMS 3
 #define TEMP_MIN 20
 #define TEMP_MAX 24
@@ -66,12 +70,11 @@ const char* g_roomNames[NUM_ROOMS] = { "Cocina", "Living", "Dormitorio" };
 
 void safe_printf(const char* format, ...) {
 	va_list args;
-	if (xSemaphoreTake(xPrintMutex, portMAX_DELAY) == pdTRUE) {
-		va_start(args, format);
-		vprintf(format, args);
-		va_end(args);
-		xSemaphoreGive(xPrintMutex);
-	}
+	LOCK(xPrintMutex);
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+	UNLOCK(xPrintMutex);
 }
 
 void logEvent(const char* fmt, ...) {
@@ -82,15 +85,11 @@ void logEvent(const char* fmt, ...) {
 	va_end(args);
 
 	// Espera indefinidamente hasta conseguir el mutex del log
-	if (xSemaphoreTake(xLogMutex, portMAX_DELAY) == pdTRUE) {
-		snprintf(g_eventLog[g_logIndex], sizeof(g_eventLog[g_logIndex]), "%s", buf);
-		g_logIndex = (g_logIndex + 1) % MAX_LOGS;
-		xSemaphoreGive(xLogMutex);
-	}
-	else {
-		// No debería pasar, pero lo dejamos por si acaso
-		safe_printf("[LOG] Error al tomar xLogMutex: %s\n", buf);
-	}
+	LOCK(xLogMutex);
+	snprintf(g_eventLog[g_logIndex], sizeof(g_eventLog[g_logIndex]), "%s", buf);
+	g_logIndex = (g_logIndex + 1) % MAX_LOGS;
+	UNLOCK(xLogMutex);
+	
 }
 
 // --- Tareas de Control (Consumidores) ---
@@ -105,23 +104,22 @@ void vTaskClimatization(void* pvParameters) {
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 		shouldBeOn = false;
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			for (int i = 0; i < NUM_ROOMS; i++) {
-				if (g_temperatures[i] < TEMP_MIN || g_temperatures[i] > TEMP_MAX) {
-					shouldBeOn = true;
-					break;
-				}
+		LOCK(xSystemStateMutex);
+		for (int i = 0; i < NUM_ROOMS; i++) {
+			if (g_temperatures[i] < TEMP_MIN || g_temperatures[i] > TEMP_MAX) {
+				shouldBeOn = true;
+				break;
 			}
-
-			if (g_thermostatOn != shouldBeOn) {
-				g_thermostatOn = shouldBeOn;
-				safe_printf("[CLIMATIZACION] Termostato %s\n",
-					g_thermostatOn ? "ENCENDIDO" : "APAGADO");
-				logEvent("Termostato %s", g_thermostatOn ? "ENCENDIDO" : "APAGADO");
-			}
-
-			xSemaphoreGive(xSystemStateMutex);
 		}
+
+		if (g_thermostatOn != shouldBeOn) {
+			g_thermostatOn = shouldBeOn;
+			safe_printf("[CLIMATIZACION] Termostato %s\n",
+				g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+			logEvent("Termostato %s", g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+		}
+
+		UNLOCK(xSystemStateMutex);
 	}
 }
 
@@ -132,17 +130,16 @@ void vTaskLighting(void* pvParameters) {
 	for (;;) {
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			for (int i = 0; i < NUM_ROOMS; i++) {
-				bool newState = (g_luxLevels[i] < LUX_THRESHOLD);
-				if (g_lightsState[i] != newState) {
-					g_lightsState[i] = newState;
-					safe_printf("[LUCES] %s ---> %s\n", g_roomNames[i], g_lightsState[i] ? "ON" : "OFF");
-					logEvent("Luces %s en %s", g_lightsState[i] ? "ENCENDIDAS" : "APAGADAS", g_roomNames[i]);
-				}
+		LOCK(xSystemStateMutex);
+		for (int i = 0; i < NUM_ROOMS; i++) {
+			bool newState = (g_luxLevels[i] < LUX_THRESHOLD);
+			if (g_lightsState[i] != newState) {
+				g_lightsState[i] = newState;
+				safe_printf("[LUCES] %s ---> %s\n", g_roomNames[i], g_lightsState[i] ? "ON" : "OFF");
+				logEvent("Luces %s en %s", g_lightsState[i] ? "ENCENDIDAS" : "APAGADAS", g_roomNames[i]);
 			}
-			xSemaphoreGive(xSystemStateMutex);
 		}
+		UNLOCK(xSystemStateMutex);
 	}
 }
 
@@ -153,44 +150,43 @@ void vTaskSecurity(void* pvParameters) {
 	for (;;) {
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
+		LOCK(xSystemStateMutex);
 
-			// Si la alarma está armada y no está sonando
-			if (g_alarmArmed && !g_alarmOn) {
-				for (int i = 0; i < NUM_ROOMS; i++) {
-					if (g_motionDetected[i]) {
-						g_alarmOn = true;
-						safe_printf("[ALARMA] MOVIMIENTO DETECTADO en %s! Alarma SONANDO!\n", g_roomNames[i]);
-						logEvent("Movimiento detectado en %s - Alarma SONANDO", g_roomNames[i]);
-						xSemaphoreGive(xSystemStateMutex);
+		// Si la alarma está armada y no está sonando
+		if (g_alarmArmed && !g_alarmOn) {
+			for (int i = 0; i < NUM_ROOMS; i++) {
+				if (g_motionDetected[i]) {
+					g_alarmOn = true;
+					safe_printf("[ALARMA] MOVIMIENTO DETECTADO en %s! Alarma SONANDO!\n", g_roomNames[i]);
+					logEvent("Movimiento detectado en %s - Alarma SONANDO", g_roomNames[i]);
+					UNLOCK(xSystemStateMutex);
 
-						//Suena durante 15 segundos
-						vTaskDelay(pdMS_TO_TICKS(15000));
+					//Suena durante 15 segundos
+					vTaskDelay(pdMS_TO_TICKS(15000));
 
-						// Apagar alarma
-						if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-							g_alarmOn = false;
-							g_alarmArmed = false;
-							safe_printf("[ALARMA] Alarma APAGADA tras 15 segundos.\n");
-							logEvent("Alarma apagada tras 15s");
-							xSemaphoreGive(xSystemStateMutex);
-						}
+					// Apagar alarma
+					LOCK(xSystemStateMutex);
+					g_alarmOn = false;
+					g_alarmArmed = false;
+					safe_printf("[ALARMA] Alarma APAGADA tras 15 segundos.\n");
+					logEvent("Alarma apagada tras 15s");
+					UNLOCK(xSystemStateMutex);
+					
 
-						// Esperar 5 segundos y volver a activar el sistema
-						vTaskDelay(pdMS_TO_TICKS(5000));
-						if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-							g_alarmArmed = true;
-							safe_printf("[CONTROL] Sistema de alarma REACTIVADO.\n");
-							logEvent("Sistema de alarma reactivado");
-							xSemaphoreGive(xSystemStateMutex);
-						}
+					// Esperar 5 segundos y volver a activar el sistema
+					vTaskDelay(pdMS_TO_TICKS(5000));
+					LOCK(xSystemStateMutex);
+					g_alarmArmed = true;
+					safe_printf("[CONTROL] Sistema de alarma REACTIVADO.\n");
+					logEvent("Sistema de alarma reactivado");
+					UNLOCK(xSystemStateMutex);
 
-						break;
-					}
+					break;
 				}
 			}
-			xSemaphoreGive(xSystemStateMutex);
 		}
+		UNLOCK(xSystemStateMutex);
+		
 	}
 }
 
@@ -201,31 +197,31 @@ void vTaskSystemMonitor(void* pvParameters) {
 	for (;;) {
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			safe_printf("\n================ ESTADO DEL SISTEMA ================\n");
+		LOCK(xSystemStateMutex);
+		safe_printf("\n================ ESTADO DEL SISTEMA ================\n");
 
-			// Estado de alarma
-			safe_printf("[CONTROL] Alarma: %s | Sonando: %s\n",
-				g_alarmArmed ? "ACTIVADA" : "APAGADA",
-				g_alarmOn ? "SI" : "NO");
+		// Estado de alarma
+		safe_printf("[CONTROL] Alarma: %s | Sonando: %s\n",
+			g_alarmArmed ? "ACTIVADA" : "APAGADA",
+			g_alarmOn ? "SI" : "NO");
 
-			// Estado del termostato
-			safe_printf("[TERMOSTATO] Estado: %s\n",
-				g_thermostatOn ? "ENCENDIDO" : "APAGADO");
+		// Estado del termostato
+		safe_printf("[TERMOSTATO] Estado: %s\n",
+			g_thermostatOn ? "ENCENDIDO" : "APAGADO");
 
-			// Estado de habitaciones
-			for (int i = 0; i < NUM_ROOMS; i++) {
-				safe_printf("[%s] Temp: %d C | Lux: %d | Luz: %s | Movimiento: %s\n",
-					g_roomNames[i],
-					g_temperatures[i],
-					g_luxLevels[i],
-					g_lightsState[i] ? "ON" : "OFF",
-					g_motionDetected[i] ? "Sí" : "No");
-			}
-
-			safe_printf("===================================================\n\n");
-			xSemaphoreGive(xSystemStateMutex);
+		// Estado de habitaciones
+		for (int i = 0; i < NUM_ROOMS; i++) {
+			safe_printf("[%s] Temp: %d C | Lux: %d | Luz: %s | Movimiento: %s\n",
+				g_roomNames[i],
+				g_temperatures[i],
+				g_luxLevels[i],
+				g_lightsState[i] ? "ON" : "OFF",
+				g_motionDetected[i] ? "Sí" : "No");
 		}
+
+		safe_printf("===================================================\n\n");
+		UNLOCK(xSystemStateMutex);
+		
 	}
 }
 
@@ -253,10 +249,10 @@ void vTaskSimTemperature(void* pvParameters) {
 		if (temp < 16) temp = 16;
 		if (temp > 28) temp = 28;
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			g_temperatures[room_index] = temp;
-			xSemaphoreGive(xSystemStateMutex);
-		}
+		LOCK(xSystemStateMutex);
+		g_temperatures[room_index] = temp;
+		UNLOCK(xSystemStateMutex);
+		
 
 		safe_printf("[SIM-TEMP-%s] Nueva temperatura: %d C\n", g_roomNames[room_index], temp);
 	}
@@ -282,10 +278,9 @@ void vTaskSimLight(void* pvParameters) {
 		if (lux < 50) lux = 50;
 		if (lux > 200) lux = 200;
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			g_luxLevels[room_index] = lux;
-			xSemaphoreGive(xSystemStateMutex);
-		}
+		LOCK(xSystemStateMutex);
+		g_luxLevels[room_index] = lux;
+		UNLOCK(xSystemStateMutex);
 
 		safe_printf("[SIM-LUZ-%s] Nivel de luz: %d lux\n", g_roomNames[room_index], lux);
 	}
@@ -305,10 +300,9 @@ void vTaskSimMotion(void* pvParameters) {
 		int prob = 2;
 		bool new_motion = ((rand() % 100) < prob);
 
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			g_motionDetected[room_index] = new_motion;
-			xSemaphoreGive(xSystemStateMutex);
-		}
+		LOCK(xSystemStateMutex);
+		g_motionDetected[room_index] = new_motion;
+		UNLOCK(xSystemStateMutex);
 
 		if (new_motion) {
 			safe_printf("[SIM-MOV-%s] Movimiento detectado\n", g_roomNames[room_index]);
@@ -323,53 +317,51 @@ void vTaskSimMotion(void* pvParameters) {
 void vTaskJSON(void* pvParameters) {
 	while (1) {
 		// Tomamos primero xSystemStateMutex y luego xLogMutex (orden consistente)
-		if (xSemaphoreTake(xSystemStateMutex, portMAX_DELAY) == pdTRUE) {
-			if (xSemaphoreTake(xLogMutex, portMAX_DELAY) == pdTRUE) {
-				FILE* f = fopen("estado.json", "w");
-				if (f) {
-					fprintf(f,
-						"{\n"
-						"  \"alarma\": %s,\n"
-						"  \"sonando\": %s,\n"
-						"  \"termostato\": %s,\n"
-						"  \"habitaciones\": [\n"
-						"    { \"nombre\": \"Cocina\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
-						"    { \"nombre\": \"Living\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
-						"    { \"nombre\": \"Dormitorio\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s }\n"
-						"  ],\n"
-						"  \"eventos\": [\n",
-						g_alarmArmed ? "true" : "false",
-						g_alarmOn ? "true" : "false",
-						g_thermostatOn ? "true" : "false",
-						g_temperatures[0], g_luxLevels[0], g_lightsState[0] ? "true" : "false", g_motionDetected[0] ? "true" : "false",
-						g_temperatures[1], g_luxLevels[1], g_lightsState[1] ? "true" : "false", g_motionDetected[1] ? "true" : "false",
-						g_temperatures[2], g_luxLevels[2], g_lightsState[2] ? "true" : "false", g_motionDetected[2] ? "true" : "false"
-					);
+		LOCK(xSystemStateMutex);
+		LOCK(xLogMutex);
+			
+		FILE* f = fopen("estado.json", "w");
+		if (f) {
+			fprintf(f,
+				"{\n"
+				"  \"alarma\": %s,\n"
+				"  \"sonando\": %s,\n"
+				"  \"termostato\": %s,\n"
+				"  \"habitaciones\": [\n"
+				"    { \"nombre\": \"Cocina\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
+				"    { \"nombre\": \"Living\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s },\n"
+				"    { \"nombre\": \"Dormitorio\", \"temperatura\": %d, \"lux\": %d, \"luz\": %s, \"movimiento\": %s }\n"
+				"  ],\n"
+				"  \"eventos\": [\n",
+				g_alarmArmed ? "true" : "false",
+				g_alarmOn ? "true" : "false",
+				g_thermostatOn ? "true" : "false",
+				g_temperatures[0], g_luxLevels[0], g_lightsState[0] ? "true" : "false", g_motionDetected[0] ? "true" : "false",
+				g_temperatures[1], g_luxLevels[1], g_lightsState[1] ? "true" : "false", g_motionDetected[1] ? "true" : "false",
+				g_temperatures[2], g_luxLevels[2], g_lightsState[2] ? "true" : "false", g_motionDetected[2] ? "true" : "false"
+			);
 
-					// Escribimos eventos desde el buffer circular (en orden cronológico)
-					int count = 0;
-					for (int i = 0; i < MAX_LOGS; i++) {
-						int idx = (g_logIndex + i) % MAX_LOGS;
-						if (g_eventLog[idx][0] != '\0') {
-							if (count > 0) fprintf(f, ",\n");
-							fprintf(f, "    \"%s\"", g_eventLog[idx]);
-							count++;
-						}
-					}
-
-					fprintf(f, "\n  ]\n}\n");
-					fflush(f);
-					fclose(f);
+			// Escribimos eventos desde el buffer circular (en orden cronológico)
+			int count = 0;
+			for (int i = 0; i < MAX_LOGS; i++) {
+				int idx = (g_logIndex + i) % MAX_LOGS;
+				if (g_eventLog[idx][0] != '\0') {
+					if (count > 0) fprintf(f, ",\n");
+					fprintf(f, "    \"%s\"", g_eventLog[idx]);
+					count++;
 				}
-				else {
-					safe_printf("Error: no se pudo abrir el archivo JSON.\n");
-				}
+			}
 
-				xSemaphoreGive(xLogMutex);
-			} 
-			xSemaphoreGive(xSystemStateMutex);
+			fprintf(f, "\n  ]\n}\n");
+			fflush(f);
+			fclose(f);
+		}
+		else {
+			safe_printf("Error: no se pudo abrir el archivo JSON.\n");
 		}
 
+		UNLOCK(xLogMutex);
+		UNLOCK(xSystemStateMutex);
 		vTaskDelay(pdMS_TO_TICKS(500));
 	}
 }
