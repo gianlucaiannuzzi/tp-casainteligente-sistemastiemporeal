@@ -40,7 +40,7 @@ export function Card({ habitacion }: CardProps) {
                     Temperatura
                 </label>
                 <span className={blink.temperatura ? "animate-blink" : ""}>
-                    {habitacion.temperatura + " C°"}
+                    {habitacion.temperatura + " °C"}
                 </span>
             </div>
             <div className="h-10 flex justify-between p-2 border-b text-slate-600">
@@ -48,7 +48,7 @@ export function Card({ habitacion }: CardProps) {
                     Lux
                 </label>
                 <span className={blink.lux ? "animate-blink" : ""}>
-                    {habitacion.lux + " lumen/m²"}
+                    {habitacion.lux + " lm/m²"}
                 </span>
             </div>
             <div className="h-10 flex justify-between p-2 border-b text-slate-600">
