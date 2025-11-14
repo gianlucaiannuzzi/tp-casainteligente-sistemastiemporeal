@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { EstadoGlobal } from "../types";
 import { toast } from "sonner";
-import { Card, Skeleton } from "../components";
+import { Card, CardSkeleton, PanelEventos } from "../components";
 import { Bell, BellOff, Thermometer, ThermometerSnowflake, Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -21,12 +21,14 @@ export default function App() {
         .then(res => res.json())
         .then(data => {
           setEstado(prev => ({
-            ...prev,          
-            ...data,          
+            ...prev,
+            ...data,
             eventos: data.eventos ?? prev.eventos
           }));
         })
-        .catch(() => toast.message("Esperando datos..."));
+        .catch(() => {
+          toast.message("Error refrescando los datos.");
+        });
     }, 500);
 
     return () => clearInterval(intervalo);
@@ -79,37 +81,16 @@ export default function App() {
       {/* Grid de habitaciones */}
       <div className="grid grid-cols-3 gap-5">
         {estado.habitaciones.length === 0 &&
-          Array.from({ length: 3 }, (_, i) => <Skeleton key={i} />)}
+          Array.from({ length: 3 }, (_, i) => <CardSkeleton key={i} />)}
         {estado.habitaciones.length > 0 &&
           estado.habitaciones.map((habitacion, i) => (
             <Card key={i} habitacion={habitacion} />
           ))}
       </div>
 
-      {/* Panel de eventos */}
       {estado.eventos && estado.eventos.length > 0 && (
-        <motion.div
-          className="w-3/4 bg-white shadow-md rounded-2xl p-4 mt-8 mb-8 border border-gray-200"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-xl font-semibold mb-3 text-gray-700">📜 Registro de eventos</h2>
-          <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-            {estado.eventos.slice().reverse().map((evento, index) => (
-              <motion.div
-                key={index}
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-              >
-                {evento}
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        <PanelEventos eventos={estado.eventos} />
       )}
-    </div>
+    </div >
   );
 };

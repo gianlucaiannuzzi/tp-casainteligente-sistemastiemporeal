@@ -1,12 +1,37 @@
-import type { EstadoHabitacion } from "../../types";
+import { useEffect, useRef, useState } from "react";
+import type { BlinkEstadoHabitacion, EstadoHabitacion } from "../../types";
 
 type CardProps = {
     habitacion: EstadoHabitacion;
 };
 
 export function Card({ habitacion }: CardProps) {
+
+    const prev = useRef<EstadoHabitacion | null>(null);
+    const [blink, setBlink] = useState<BlinkEstadoHabitacion>({
+        temperatura: false,
+        lux: false,
+        luz: false,
+        movimiento: false
+    });
+
+    useEffect(() => {
+        if (prev.current === null) {
+            prev.current = habitacion;
+            return;
+        };
+
+        setBlink({
+            temperatura: habitacion.temperatura !== prev.current.temperatura,
+            lux: habitacion.lux !== prev.current.lux,
+            luz: habitacion.luz !== prev.current.luz,
+            movimiento: habitacion.movimiento !== prev.current.movimiento
+        })
+        prev.current = habitacion;
+    }, [habitacion]);
+
     return (
-        <div className="rounded-lg border shadow-sm overflow-hidden w-60 overflow-y-auto">
+        <div className="bg-white rounded-lg border shadow-sm overflow-hidden w-60 overflow-y-auto" >
             <div className="h-10 p-2 flex justify-center bg-blue-600 text-white">
                 <span>{habitacion.nombre}</span>
             </div>
@@ -14,7 +39,7 @@ export function Card({ habitacion }: CardProps) {
                 <label className="font-bold">
                     Temperatura
                 </label>
-                <span>
+                <span className={blink.temperatura ? "animate-blink" : ""}>
                     {habitacion.temperatura + " C°"}
                 </span>
             </div>
@@ -22,7 +47,7 @@ export function Card({ habitacion }: CardProps) {
                 <label className="font-bold">
                     Lux
                 </label>
-                <span>
+                <span className={blink.lux ? "animate-blink" : ""}>
                     {habitacion.lux + " lumen/m²"}
                 </span>
             </div>
@@ -30,7 +55,7 @@ export function Card({ habitacion }: CardProps) {
                 <label className="font-bold">
                     Luz
                 </label>
-                <span>
+                <span className={blink.luz ? "animate-blink" : ""}>
                     {habitacion.luz ? "Encendida" : "Apagada"}
                 </span>
             </div>
@@ -38,7 +63,7 @@ export function Card({ habitacion }: CardProps) {
                 <label className="font-bold">
                     Movimiento
                 </label>
-                <span>
+                <span className={blink.movimiento ? "animate-blink" : ""}>
                     {habitacion.movimiento ? "Si" : "No"}
                 </span>
             </div>

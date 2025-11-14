@@ -6,6 +6,13 @@ export type EstadoHabitacion = {
     movimiento: boolean;
 };
 
+export type BlinkEstadoHabitacion = {
+    temperatura: boolean;
+    lux: boolean;
+    luz: boolean;
+    movimiento: boolean;
+};
+
 export type EstadoGlobal = {
     alarma: boolean;
     sonando: boolean;

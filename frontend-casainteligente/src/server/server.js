@@ -1,7 +1,6 @@
 import express from "express";
 import fs from "fs";
 import cors from "cors";
-import path from "path";
 
 export function iniciarServidor() {
   const app = express();
@@ -9,14 +8,7 @@ export function iniciarServidor() {
 
   app.get("/estado.json", (req, res) => {
     try {
-      const filePath = path.join(
-        "C:",
-        "tp-casainteligente-sistemastiemporeal",
-        "TP-CasaInteligente",
-        "estado.json"
-      );
-
-      const data = fs.readFileSync(filePath, "utf8");
+      const data = fs.readFileSync("estado.json", "utf8");
       res.json(JSON.parse(data));
     } catch (err) {
       console.error("Error leyendo estado.json:", err.message);

@@ -1,2 +1,3 @@
 export { Card } from "./card/Card";
-export { Skeleton } from "./skeleton/Skeleton";
+export { CardSkeleton } from "./skeleton/CardSkeleton";
+export { PanelEventos } from "./panelEventos/PanelEventos";
